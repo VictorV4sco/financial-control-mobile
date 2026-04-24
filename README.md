@@ -1,50 +1,88 @@
-# Welcome to your Expo app 👋
+# Financial Control Mobile
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Mobile application for the Financial Control project, built with React Native and Expo.
 
-## Get started
+The goal of this app is to serve as the mobile interface for the Financial Control API, which is responsible for managing:
 
-1. Install dependencies
+- accounts payable
+- credit cards
+- credit card bills
+- transactions
 
-   ```bash
-   npm install
-   ```
+## Current Status
 
-2. Start the app
+The project is in its initial setup phase.
 
-   ```bash
-   npx expo start
-   ```
+So far, the following has been done:
 
-In the output, you'll find options to open the app in a
+- project creation with Expo
+- project structure reorganization to `src/`
+- removal of the default Expo starter boilerplate
+- creation of a minimal initial screen to serve as a clean starting point
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Stack
 
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+- React Native
+- Expo
+- Expo Router
+- TypeScript
+- ESLint
 
-## Get a fresh project
+## Current Structure
 
-When you're ready, run:
-
-```bash
-npm run reset-project
+```text
+src/
+  app/
+    _layout.tsx
+    index.tsx
+    (tabs)/
+  assets/
+    images/
+  components/
+    ui/
+  constants/
+  hooks/
+  scripts/
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **src/app** directory where you can start developing.
+## Navigation
 
-## Learn more
+The project uses `Expo Router`, so navigation is based on files and folders inside `src/app`.
 
-To learn more about developing your project with Expo, look at the following resources:
+Examples:
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+- `src/app/index.tsx`: initial screen
+- `src/app/_layout.tsx`: root layout and main navigation configuration
+- `src/app/(tabs)/`: reserved group for future tab-based navigation
 
-## Join the community
+## How To Run
 
-Join our community of developers creating universal apps.
+1. Install dependencies:
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```bash
+npm install
+```
+
+2. Start the project:
+
+```bash
+npx expo start
+```
+
+You can open the app in:
+
+- Android Emulator
+- iOS Simulator
+- Expo Go
+- web browser
+
+## Next Steps
+
+- define the app functional structure
+- create the API integration layer
+- model frontend types and contracts
+- build the first financial flow screens
+
+## Note
+
+This README will be updated as the project evolves.
