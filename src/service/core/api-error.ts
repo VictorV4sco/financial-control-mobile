@@ -11,10 +11,20 @@ const DEFAULT_ERROR_MESSAGE = 'An unexpected error happened. Please try again.';
 const NETWORK_ERROR_MESSAGE = 'Unable to reach the server. Please check your connection.';
 
 export function normalizeApiError(error: unknown): ApiError {
+  if (isApiError(error)) {
+    return error;
+  }
+
   if (isAxiosError(error)) {
     if (error.response) {
+      const serverErrorMessage = getFirstAvailableServerErrorMessage([
+        error.response.data,
+        getRawResponseBody(error.response.request),
+        getRawResponseBody(error.request),
+      ]);
+
       return {
-        message: getServerErrorMessage(error.response.data) ?? error.message ?? DEFAULT_ERROR_MESSAGE,
+        message: serverErrorMessage ?? error.message ?? DEFAULT_ERROR_MESSAGE,
         status: error.response.status,
         code: error.code,
         details: error.response.data,
@@ -45,22 +55,110 @@ export function normalizeApiError(error: unknown): ApiError {
   };
 }
 
-function getServerErrorMessage(data: unknown): string | undefined {
-  if (typeof data === 'string' && data.trim()) {
-    return data;
+function isApiError(error: unknown): error is ApiError {
+  if (isAxiosError(error)) {
+    return false;
   }
 
-  if (!data || typeof data !== 'object') {
-    return undefined;
-  }
+  return Boolean(
+    error &&
+      typeof error === 'object' &&
+      'message' in error &&
+      typeof error.message === 'string' &&
+      error.message.trim()
+  );
+}
 
-  if ('message' in data && typeof data.message === 'string' && data.message.trim()) {
-    return data.message;
-  }
+function getFirstAvailableServerErrorMessage(values: unknown[]): string | undefined {
+  for (const value of values) {
+    const message = getServerErrorMessage(value);
 
-  if ('error' in data && typeof data.error === 'string' && data.error.trim()) {
-    return data.error;
+    if (message) {
+      return message;
+    }
   }
 
   return undefined;
+}
+
+function getRawResponseBody(value: unknown): unknown {
+  if (!value || typeof value !== 'object') {
+    return undefined;
+  }
+
+  return (value as Record<string, unknown>)._response;
+}
+
+function getServerErrorMessage(data: unknown): string | undefined {
+  const resolvedData = resolveServerErrorData(data);
+
+  if (typeof resolvedData === 'string' && resolvedData.trim()) {
+    return resolvedData;
+  }
+
+  if (!resolvedData || typeof resolvedData !== 'object') {
+    return undefined;
+  }
+
+  const dataRecord = resolvedData as Record<string, unknown>;
+  const primaryMessage =
+    getNonEmptyString(dataRecord.message) ?? getNonEmptyString(dataRecord.error);
+  const fieldMessages = getFieldMessages(dataRecord.errors);
+
+  if (primaryMessage && fieldMessages.length > 0) {
+    return `${primaryMessage}\n\n${fieldMessages.map((message) => `- ${message}`).join('\n')}`;
+  }
+
+  if (fieldMessages.length > 0) {
+    return fieldMessages.map((message) => `- ${message}`).join('\n');
+  }
+
+  return primaryMessage;
+}
+
+function resolveServerErrorData(data: unknown): unknown {
+  if (typeof data === 'string' && data.trim()) {
+    return tryParseJson(data) ?? data;
+  }
+
+  return data;
+}
+
+function getNonEmptyString(value: unknown): string | undefined {
+  if (typeof value === 'string' && value.trim()) {
+    return value;
+  }
+
+  return undefined;
+}
+
+function getFieldMessages(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value
+    .map((item) => {
+      if (!item || typeof item !== 'object') {
+        return null;
+      }
+
+      const itemRecord = item as Record<string, unknown>;
+      const message = getNonEmptyString(itemRecord.message);
+
+      if (!message) {
+        return null;
+      }
+
+      return message;
+    })
+    .filter((message): message is string => Boolean(message));
+}
+
+function tryParseJson(value: string): unknown | null {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
 }
