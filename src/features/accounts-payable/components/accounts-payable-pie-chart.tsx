@@ -1,6 +1,7 @@
 import { memo } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import Svg, { Circle, Path } from 'react-native-svg';
+import { styles } from './styles/accounts-payable-pie-chart.styles';
 
 type AccountsPayablePieChartProps = {
   size?: number;
@@ -112,19 +113,4 @@ function describeArc(
 
   return `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${end.x} ${end.y}`;
 }
-
-const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  innerCircle: {
-    position: 'absolute',
-    width: 96,
-    height: 96,
-    borderRadius: 48,
-    backgroundColor: '#F6F8FB',
-  },
-});
-
 export default memo(AccountsPayablePieChart);

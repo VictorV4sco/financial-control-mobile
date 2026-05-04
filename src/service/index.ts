@@ -8,3 +8,9 @@ export {
   getAccountsPayableByMonthAndYear,
   updateAccountsPayable,
 } from './accounts-payable.service';
+export {
+  createCreditCard,
+  deleteCreditCard,
+  getCreditCards,
+  updateCreditCard,
+} from './credit-card.service';

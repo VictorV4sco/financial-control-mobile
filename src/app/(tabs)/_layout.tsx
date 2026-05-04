@@ -30,11 +30,11 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="dashboard"
+        name="cards"
         options={{
-          title: 'Dashboard',
+          title: 'Cards',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="pie-chart-outline" size={size} color={color} />
+            <Ionicons name="card-outline" size={size} color={color} />
           ),
         }}
       />
