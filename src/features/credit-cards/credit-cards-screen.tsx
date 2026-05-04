@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   Pressable,
+  RefreshControl,
   SafeAreaView,
   ScrollView,
   Text,
@@ -33,6 +34,7 @@ export function CreditCardsScreen() {
   const [isCreating, setIsCreating] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedCard, setSelectedCard] = useState<CreditCardReadDTO | null>(null);
   const [editName, setEditName] = useState('');
 
@@ -166,9 +168,33 @@ export function CreditCardsScreen() {
     }
   }
 
+  async function handleRefresh() {
+    try {
+      setIsRefreshing(true);
+      const response = await getCreditCards();
+      setCards(response);
+    } catch (error) {
+      const normalizedError = normalizeApiError(error);
+
+      if (normalizedError.status === 404) {
+        setCards([]);
+        return;
+      }
+
+      showErrorAlert(normalizedError.message);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={isRefreshing} onRefresh={() => void handleRefresh()} />
+        }
+        showsVerticalScrollIndicator={false}>
         <Text style={styles.screenTitle}>Credit Cards</Text>
 
         <View style={styles.panel}>

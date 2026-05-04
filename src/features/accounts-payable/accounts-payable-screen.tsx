@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   Pressable,
+  RefreshControl,
   SafeAreaView,
   ScrollView,
   Text,
@@ -66,6 +67,7 @@ export function AccountsPayableScreen() {
   const [isResultsModalVisible, setIsResultsModalVisible] = useState(false);
   const [editingRecord, setEditingRecord] = useState<AccountsPayableReadDTO | null>(null);
   const [editFormState, setEditFormState] = useState(INITIAL_EDIT_FORM_STATE);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [minimumDueDate] = useState(() => getTodayDate());
 
   const lastSearchTotal = records.reduce((sum, item) => sum + item.amount, 0);
@@ -227,10 +229,37 @@ export function AccountsPayableScreen() {
     }
   }
 
+  async function handleRefresh() {
+    try {
+      setIsRefreshing(true);
+      const response = await getAccountsPayableByMonthAndYear({
+        month: selectedMonth,
+        year: selectedYear,
+      });
+
+      setRecords(response);
+    } catch (error) {
+      const normalizedError = normalizeApiError(error);
+
+      if (normalizedError.status === 404) {
+        setRecords([]);
+        setIsResultsModalVisible(false);
+        return;
+      }
+
+      showErrorAlert(normalizedError.message);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView
         contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={isRefreshing} onRefresh={() => void handleRefresh()} />
+        }
         scrollEnabled={openFilter === null}
         showsVerticalScrollIndicator={false}>
         <Text style={styles.screenTitle}>Accounts Payable</Text>
