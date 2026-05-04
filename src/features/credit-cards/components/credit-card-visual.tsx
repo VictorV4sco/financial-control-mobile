@@ -43,6 +43,7 @@ const CARD_THEMES = [
 export function CreditCardVisual({
   name,
   index,
+  cardId,
   compact = false,
 }: CreditCardVisualProps) {
   const theme = CARD_THEMES[index % CARD_THEMES.length];
@@ -73,7 +74,14 @@ export function CreditCardVisual({
         <View style={styles.iconBadge}>
           <Ionicons name="card-outline" size={18} color={theme.textColor} />
         </View>
-        <Text style={[styles.brand, { color: theme.mutedTextColor }]}>FINANCIAL CONTROL</Text>
+        <View style={styles.headerTextBlock}>
+          <Text style={[styles.brand, { color: theme.mutedTextColor }]}>FINANCIAL CONTROL</Text>
+          {typeof cardId === 'number' ? (
+            <Text style={[styles.cardIdText, { color: theme.mutedTextColor }]}>
+              ID {cardId}
+            </Text>
+          ) : null}
+        </View>
       </View>
 
       <View style={styles.contentBlock}>

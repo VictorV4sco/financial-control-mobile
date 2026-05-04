@@ -14,3 +14,4 @@ export {
   getCreditCards,
   updateCreditCard,
 } from './credit-card.service';
+export { createCreditCardBill } from './credit-card-bill.service';

@@ -45,6 +45,10 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  headerTextBlock: {
+    alignItems: 'flex-end',
+    gap: 4,
+  },
   iconBadge: {
     width: 40,
     height: 40,
@@ -57,6 +61,11 @@ export const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
     letterSpacing: 1.2,
+  },
+  cardIdText: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.8,
   },
   contentBlock: {
     flex: 1,

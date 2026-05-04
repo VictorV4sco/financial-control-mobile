@@ -107,7 +107,7 @@ export function AccountsPayableDateField({
 
           <View style={styles.modalCard}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select due date</Text>
+              <Text style={styles.modalTitle}>Select {label.toLowerCase()}</Text>
             </View>
 
             <DateTimePicker
