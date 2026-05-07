@@ -19,6 +19,7 @@ The project is already beyond the Expo starter stage and includes:
   - `Credit Cards`
   - `Credit Card Bills`
   - `Transactions` inside a bill
+  - `Annual Comparison`
 
 ## Stack
 
@@ -101,6 +102,25 @@ Inside the bill detail flow, the app currently supports:
 - listing bill transactions in a table
 - opening a details modal for each transaction
 
+### Annual Comparison
+
+The `Annual Comparison` flow currently supports:
+
+- selecting one year
+- loading an annual summary across all months
+- comparing:
+  - `Accounts`
+  - `Card bills`
+- showing summary cards for:
+  - accounts total
+  - card bills total
+  - combined total
+  - highest month
+  - lowest month above zero
+- opening a dedicated stacked chart screen
+- rendering an interactive vertical comparison chart
+- tapping individual bars to show exact values in a tooltip
+
 ## Navigation
 
 The app uses `Expo Router` with tabs and stacked detail routes.
@@ -110,12 +130,14 @@ Current top-level tabs:
 - `Accounts`
 - `Cards`
 - `Bills`
+- `Compare`
 - `Settings`
 
 Current stacked routes already in place:
 
 - bill detail screen
 - bill transactions screen
+- annual comparison chart screen
 
 ## Project Structure
 
@@ -128,7 +150,10 @@ src/
       index.tsx
       cards.tsx
       bills.tsx
+      comparison.tsx
       settings.tsx
+    annual-comparison/
+      [year].tsx
     bill-details/
       [cardId].tsx
     bill-transactions/
@@ -153,10 +178,15 @@ src/
       credit-card-bill-details-screen.tsx
       credit-card-bill-transactions-screen.tsx
       credit-card-bills-screen.tsx
+    annual-comparison/
+      components/
+      annual-comparison-screen.tsx
+      annual-comparison-graph-screen.tsx
     coming-soon/
   service/
     core/
     accounts-payable.service.ts
+    annual-comparison.service.ts
     credit-card.service.ts
     credit-card-bill.service.ts
     transaction.service.ts
@@ -175,6 +205,7 @@ API integration is split into:
   - normalized error handling
 - module-specific services:
   - `accounts-payable.service.ts`
+  - `annual-comparison.service.ts`
   - `credit-card.service.ts`
   - `credit-card-bill.service.ts`
   - `transaction.service.ts`
@@ -195,10 +226,18 @@ Some important UI decisions already in place:
 - due dates and transaction dates use a native date picker on supported platforms
 - bill transactions open in a dedicated stacked screen instead of a crowded modal
 - transaction rows expose a details icon that opens a focused modal
+- annual comparison uses a dedicated stacked chart screen instead of a modal
+- annual comparison bars are interactive and support per-series value tooltips
 - status colors are consistent in the accounts payable flow:
   - green for `Paid`
   - orange for `Pending`
   - red for `Overdue`
+
+## Currency Display
+
+The UI is currently using `USD` formatting for monetary values to stay aligned with the current English-first presentation layer.
+
+Internationalization and locale-driven currency formatting are planned for a later step.
 
 ## Backend Contract Alignment
 
@@ -250,9 +289,11 @@ The current focus is refining the mobile experience on top of the new backend co
 
 Likely next steps include:
 
+- polishing the annual comparison chart interactions
 - polishing the bill and transaction UX
 - adding bill status update actions
 - expanding transaction editing and deletion flows
+- adding locale and language configuration
 - improving reusable UI primitives
 - revisiting state management as data-heavy screens grow
 
