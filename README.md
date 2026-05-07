@@ -2,20 +2,23 @@
 
 Mobile application for the Financial Control project, built with React Native and Expo.
 
-This app is the mobile client for the Financial Control API and is being developed feature by feature, starting with the `Accounts Payable` flow.
+This app is the mobile client for the Financial Control API and is being developed feature by feature on top of a Spring Boot backend.
 
 ## Current Status
 
-The project is no longer just a clean Expo starter. It already includes:
+The project is already beyond the Expo starter stage and includes:
 
-- project structure organized under `src/`
+- code organized under `src/`
 - tab-based navigation with Expo Router
+- stacked detail flows for bill-related screens
 - shared Axios service layer
-- frontend API contracts and shared types
-- first functional feature: `Accounts Payable`
-- interactive monthly summary modal with status-based pie chart
-- edit and delete actions for monthly records
-- native date picker support for due dates
+- centralized backend error normalization
+- typed frontend contracts for the API
+- functional flows for:
+  - `Accounts Payable`
+  - `Credit Cards`
+  - `Credit Card Bills`
+  - `Transactions` inside a bill
 
 ## Stack
 
@@ -32,29 +35,87 @@ The project is no longer just a clean Expo starter. It already includes:
 
 ### Accounts Payable
 
-The first implemented flow is `Accounts Payable`.
+The `Accounts Payable` flow currently supports:
+
+- creating a payable entry
+- selecting the due date with a native date picker
+- searching records by month and year
+- showing a monthly summary in a modal
+- visualizing totals by status with a pie chart
+- editing a selected payable
+- marking a payable as paid
+- deleting a payable
+- showing backend validation and business-rule messages in alerts
+
+### Credit Cards
+
+The `Credit Cards` flow now follows the backend cycle-based billing model.
 
 It currently supports:
 
-- creating a bill
-- selecting the due date with a native date picker
-- searching bills by month and year
-- showing a monthly summary in a modal
-- visualizing totals by status with a pie chart
-- editing a selected bill
-- marking a bill as paid with a checkbox in the edit flow
-- deleting a bill
-- showing backend validation and business-rule messages in alerts
+- creating a card with:
+  - `name`
+  - `openingDay`
+  - `closingDay`
+  - `dueDay`
+- listing saved cards
+- opening a card details modal
+- updating the card name and billing cycle
+- deleting a card
+- showing backend rule errors, such as deletion being blocked by open bills
 
-### Navigation
+### Credit Card Bills
 
-The app uses `Expo Router` with tab-based navigation.
+The `Bills` flow now matches the new backend contract.
 
-Current tabs:
+It currently supports:
 
-- `Accounts Payable`
-- `Dashboard` placeholder
-- `Settings` placeholder
+- creating a bill by:
+  - `creditCardId`
+  - `year`
+  - `month`
+- using the backend to derive:
+  - `openingDate`
+  - `closingDate`
+  - `dueDate`
+- showing available cards with their `creditCardId`
+- opening a bill workspace from a selected card
+- loading a bill for a selected period
+- displaying bill details such as:
+  - bill id
+  - card id
+  - opening date
+  - closing date
+  - due date
+  - total amount
+  - status
+
+### Transactions Inside a Bill
+
+Inside the bill detail flow, the app currently supports:
+
+- creating a transaction linked to the loaded bill
+- simple purchases
+- installment purchases
+- opening a dedicated transactions screen through stack navigation
+- listing bill transactions in a table
+- opening a details modal for each transaction
+
+## Navigation
+
+The app uses `Expo Router` with tabs and stacked detail routes.
+
+Current top-level tabs:
+
+- `Accounts`
+- `Cards`
+- `Bills`
+- `Settings`
+
+Current stacked routes already in place:
+
+- bill detail screen
+- bill transactions screen
 
 ## Project Structure
 
@@ -65,8 +126,13 @@ src/
     (tabs)/
       _layout.tsx
       index.tsx
-      dashboard.tsx
+      cards.tsx
+      bills.tsx
       settings.tsx
+    bill-details/
+      [cardId].tsx
+    bill-transactions/
+      [billId].tsx
   assets/
     images/
   components/
@@ -78,38 +144,74 @@ src/
       components/
       accounts-payable-screen.tsx
       accounts-payable.utils.ts
+    credit-cards/
+      components/
+      credit-card-form.utils.ts
+      credit-cards-screen.tsx
+    credit-card-bills/
+      components/
+      credit-card-bill-details-screen.tsx
+      credit-card-bill-transactions-screen.tsx
+      credit-card-bills-screen.tsx
     coming-soon/
   service/
     core/
     accounts-payable.service.ts
+    credit-card.service.ts
+    credit-card-bill.service.ts
+    transaction.service.ts
   scripts/
   types/
 ```
 
 ## Service Layer
 
-The API integration is split into two parts:
+API integration is split into:
 
-- `src/service/core/`: shared Axios setup, interceptors, API config, and error normalization
-- `src/service/accounts-payable.service.ts`: module-specific requests for the first feature
+- `src/service/core/`
+  - shared Axios setup
+  - API config
+  - interceptors
+  - normalized error handling
+- module-specific services:
+  - `accounts-payable.service.ts`
+  - `credit-card.service.ts`
+  - `credit-card-bill.service.ts`
+  - `transaction.service.ts`
 
 The app already handles backend messages centrally, including:
 
 - resource not found errors
 - validation errors
 - field-level validation details
+- business-rule errors
 - network errors
 
 ## UX Notes
 
 Some important UI decisions already in place:
 
-- the search filters for month and year open in overlay selectors instead of expanding the layout
-- due dates use a calendar picker on supported native platforms
-- status colors are consistent across the list, summary cards, and pie chart:
+- month and year search fields use compact controls instead of large chip grids
+- due dates and transaction dates use a native date picker on supported platforms
+- bill transactions open in a dedicated stacked screen instead of a crowded modal
+- transaction rows expose a details icon that opens a focused modal
+- status colors are consistent in the accounts payable flow:
   - green for `Paid`
   - orange for `Pending`
   - red for `Overdue`
+
+## Backend Contract Alignment
+
+The mobile app is now aligned with the refactored backend billing model:
+
+- the billing cycle belongs to the credit card
+- the mobile app does not manually send bill dates anymore
+- bill creation uses only:
+  - `creditCardId`
+  - `year`
+  - `month`
+- bill lookup uses the same period-based contract
+- transactions remain linked to `creditCardBillId`
 
 ## How To Run
 
@@ -132,16 +234,27 @@ You can open the app in:
 - Expo Go
 - web browser
 
+## Development Notes
+
+For local Android emulator usage, the API base URL usually needs to target:
+
+```text
+http://10.0.2.2:8080
+```
+
+This is already handled in the shared API configuration for the Android emulator flow.
+
 ## Current Focus
 
-The current focus is building the mobile experience on top of the existing backend, starting with `Accounts Payable`.
+The current focus is refining the mobile experience on top of the new backend contract.
 
-Planned next steps include:
+Likely next steps include:
 
-- refactoring the `Accounts Payable` screen into smaller pieces
-- implementing the `Credit Card` flow
-- expanding reusable UI components
-- improving state management for data-heavy screens
+- polishing the bill and transaction UX
+- adding bill status update actions
+- expanding transaction editing and deletion flows
+- improving reusable UI primitives
+- revisiting state management as data-heavy screens grow
 
 ## Note
 
