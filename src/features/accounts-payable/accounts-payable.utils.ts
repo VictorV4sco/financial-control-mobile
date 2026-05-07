@@ -74,9 +74,9 @@ export function buildStatusSummary(items: AccountsPayableReadDTO[]): StatusSumma
 }
 
 export function formatCurrency(value: number): string {
-  return new Intl.NumberFormat('pt-BR', {
+  return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'BRL',
+    currency: 'USD',
   }).format(value);
 }
 

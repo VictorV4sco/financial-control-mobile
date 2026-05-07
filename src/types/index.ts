@@ -6,6 +6,10 @@ export type {
   ValidationErrorResponse,
 } from './common.types';
 export type {
+  AnnualComparisonMonthItem,
+  AnnualComparisonSummary,
+} from './annual-comparison.types';
+export type {
   AccountsPayableInsertDTO,
   AccountsPayableQueryParams,
   AccountsPayableReadDTO,
