@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useRouter } from 'expo-router';
 import {
   ActivityIndicator,
   Alert,
@@ -11,30 +12,30 @@ import {
   View,
 } from 'react-native';
 
-import { AccountsPayableDateField } from '../accounts-payable/components/accounts-payable-date-field';
+import { getCurrentMonth, getCurrentYear } from '../accounts-payable/accounts-payable.utils';
 import { CreditCardVisual } from '../credit-cards/components/credit-card-visual';
+import { CreditCardBillLookupForm } from './components/credit-card-bill-lookup-form';
 import { styles } from './components/styles/credit-card-bills-screen.styles';
 import {
   createCreditCardBill,
   getCreditCards,
   normalizeApiError,
 } from '@/service';
-import type { CreditCardBillInsertDTO, CreditCardReadDTO } from '@/types';
+import type { CreditCardReadDTO } from '@/types';
 
-const INITIAL_FORM_STATE: CreditCardBillInsertDTO = {
-  creditCardId: 0,
-  openingDate: '',
-  closingDate: '',
-  dueDate: '',
+type CreditCardBillFormState = {
+  creditCardId: string;
+  month: string;
+  year: string;
 };
 
 export function CreditCardBillsScreen() {
-  const [formState, setFormState] = useState(INITIAL_FORM_STATE);
+  const router = useRouter();
+  const [formState, setFormState] = useState(() => createInitialFormState());
   const [cards, setCards] = useState<CreditCardReadDTO[]>([]);
   const [isLoadingCards, setIsLoadingCards] = useState(true);
   const [isCreatingBill, setIsCreatingBill] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [minimumDate] = useState(() => getTodayDate());
 
   useEffect(() => {
     void loadCreditCards();
@@ -63,16 +64,14 @@ export function CreditCardBillsScreen() {
     const payload = buildPayload(formState);
 
     if (!payload) {
-      showErrorAlert(
-        'Please fill in credit card ID, opening date, closing date, and due date before saving.'
-      );
+      showErrorAlert('Please fill in credit card ID, year, and month before saving.');
       return;
     }
 
     try {
       setIsCreatingBill(true);
       await createCreditCardBill(payload);
-      setFormState(INITIAL_FORM_STATE);
+      setFormState(createInitialFormState());
       showSuccessAlert('Bill created successfully.');
     } catch (error) {
       showErrorAlert(getApiErrorMessage(error));
@@ -82,7 +81,18 @@ export function CreditCardBillsScreen() {
   }
 
   function handleClearForm() {
-    setFormState(INITIAL_FORM_STATE);
+    setFormState(createInitialFormState());
+  }
+
+  function handleOpenBillDetails(card: CreditCardReadDTO, index: number) {
+    router.push({
+      pathname: '/bill-details/[cardId]',
+      params: {
+        cardId: String(card.id),
+        cardIndex: String(index),
+        cardName: card.name,
+      },
+    });
   }
 
   async function handleRefresh() {
@@ -118,18 +128,19 @@ export function CreditCardBillsScreen() {
           <View style={styles.panelHeader}>
             <Text style={styles.panelTitle}>Add bill</Text>
             <Text style={styles.panelSubtitle}>
-              Use the card ID below and define the bill opening, closing, and due dates.
+              Use the card ID and billing period. The backend calculates the dates from the
+              card cycle automatically.
             </Text>
           </View>
 
           <View style={styles.formGroup}>
             <Text style={styles.inputLabel}>Credit card ID</Text>
             <TextInput
-              value={formState.creditCardId > 0 ? String(formState.creditCardId) : ''}
+              value={formState.creditCardId}
               onChangeText={(value) =>
                 setFormState((current) => ({
                   ...current,
-                  creditCardId: parseCreditCardId(value),
+                  creditCardId: sanitizeNumericInput(value, 6),
                 }))
               }
               placeholder="1"
@@ -139,52 +150,27 @@ export function CreditCardBillsScreen() {
             />
           </View>
 
-          <View style={styles.formRow}>
-            <View style={styles.formColumn}>
-              <AccountsPayableDateField
-                label="Opening date"
-                value={formState.openingDate}
-                onChange={(value) =>
-                  setFormState((current) => ({ ...current, openingDate: value }))
-                }
-              />
-            </View>
-
-            <View style={styles.formColumn}>
-              <AccountsPayableDateField
-                label="Closing date"
-                minimumDate={minimumDate}
-                value={formState.closingDate}
-                onChange={(value) =>
-                  setFormState((current) => ({ ...current, closingDate: value }))
-                }
-              />
-            </View>
-          </View>
-
-          <View style={styles.formGroup}>
-            <AccountsPayableDateField
-              label="Due date"
-              minimumDate={minimumDate}
-              value={formState.dueDate}
-              onChange={(value) =>
-                setFormState((current) => ({ ...current, dueDate: value }))
-              }
-            />
-          </View>
+          <CreditCardBillLookupForm
+            year={formState.year}
+            month={formState.month}
+            onYearChange={(value) =>
+              setFormState((current) => ({
+                ...current,
+                year: sanitizeNumericInput(value, 4),
+              }))
+            }
+            onMonthChange={(value) =>
+              setFormState((current) => ({
+                ...current,
+                month: sanitizeNumericInput(value, 2),
+              }))
+            }
+            onLoadBill={() => void handleCreateBill()}
+            isLoading={isCreatingBill}
+            actionLabel="Create bill"
+          />
 
           <View style={styles.actionsRow}>
-            <Pressable
-              onPress={handleCreateBill}
-              disabled={isCreatingBill}
-              style={[styles.primaryButton, isCreatingBill && styles.buttonDisabled]}>
-              {isCreatingBill ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Text style={styles.primaryButtonText}>Save bill</Text>
-              )}
-            </Pressable>
-
             <Pressable onPress={handleClearForm} style={styles.secondaryButton}>
               <Text style={styles.secondaryButtonText}>Clear</Text>
             </Pressable>
@@ -195,7 +181,7 @@ export function CreditCardBillsScreen() {
           <View>
             <Text style={styles.sectionTitle}>Available cards</Text>
             <Text style={styles.sectionSubtitle}>
-              Each card shows its credit card ID so you can create the correct bill.
+              Each card shows its credit card ID. Tap one card to open its bill workspace.
             </Text>
           </View>
         </View>
@@ -208,9 +194,17 @@ export function CreditCardBillsScreen() {
         ) : cards.length > 0 ? (
           <View style={styles.cardsList}>
             {cards.map((card, index) => (
-              <View key={card.id} style={styles.cardFrame}>
-                <CreditCardVisual cardId={card.id} index={index} name={card.name} compact />
-              </View>
+              <Pressable
+                key={card.id}
+                onPress={() => handleOpenBillDetails(card, index)}
+                style={({ pressed }) => [
+                  styles.cardPressable,
+                  pressed && styles.cardPressablePressed,
+                ]}>
+                <View style={styles.cardFrame}>
+                  <CreditCardVisual cardId={card.id} index={index} name={card.name} compact />
+                </View>
+              </Pressable>
             ))}
           </View>
         ) : (
@@ -226,40 +220,32 @@ export function CreditCardBillsScreen() {
   );
 }
 
-function buildPayload(
-  formState: CreditCardBillInsertDTO
-): CreditCardBillInsertDTO | null {
-  if (
-    !Number.isInteger(formState.creditCardId) ||
-    formState.creditCardId <= 0 ||
-    !formState.openingDate.trim() ||
-    !formState.closingDate.trim() ||
-    !formState.dueDate.trim()
-  ) {
+function buildPayload(formState: CreditCardBillFormState) {
+  const creditCardId = Number.parseInt(formState.creditCardId, 10);
+  const year = Number.parseInt(formState.year, 10);
+  const month = Number.parseInt(formState.month, 10);
+
+  if (!creditCardId || !year || !month || month < 1 || month > 12) {
     return null;
   }
 
   return {
-    creditCardId: formState.creditCardId,
-    openingDate: formState.openingDate.trim(),
-    closingDate: formState.closingDate.trim(),
-    dueDate: formState.dueDate.trim(),
+    creditCardId,
+    year,
+    month,
   };
 }
 
-function parseCreditCardId(value: string): number {
-  const normalizedValue = value.replace(/\D/g, '');
-
-  if (!normalizedValue) {
-    return 0;
-  }
-
-  return Number.parseInt(normalizedValue, 10);
+function createInitialFormState(): CreditCardBillFormState {
+  return {
+    creditCardId: '',
+    year: String(getCurrentYear()),
+    month: String(getCurrentMonth()).padStart(2, '0'),
+  };
 }
 
-function getTodayDate(): Date {
-  const today = new Date();
-  return new Date(today.getFullYear(), today.getMonth(), today.getDate(), 12);
+function sanitizeNumericInput(value: string, maxLength: number): string {
+  return value.replace(/\D/g, '').slice(0, maxLength);
 }
 
 function getApiErrorMessage(error: unknown): string {

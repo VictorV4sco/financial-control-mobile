@@ -15,7 +15,7 @@ export async function createCreditCard(
 
 export async function updateCreditCard(
   id: number,
-  payload: CreditCardInsertDTO
+  payload: CreditCardUpdateDTO
 ): Promise<CreditCardUpdateDTO> {
   const response = await api.put<CreditCardUpdateDTO>(`/credit-card/update/${id}`, payload);
   return response.data;

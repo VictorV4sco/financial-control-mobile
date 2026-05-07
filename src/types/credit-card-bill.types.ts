@@ -9,11 +9,8 @@ export type CreditCardBillQueryParams = {
 export type CreditCardBillInsertDTO = {
   id?: number | null;
   creditCardId: number;
-  openingDate: DateString;
-  closingDate: DateString;
-  dueDate: DateString;
-  totalAmount?: number | null;
-  status?: PaymentStatus | null;
+  year: number;
+  month: number;
 };
 
 export type CreditCardBillReadDTO = {
@@ -28,10 +25,5 @@ export type CreditCardBillReadDTO = {
 
 export type CreditCardBillUpdateDTO = {
   id: number;
-  creditCardId: number;
-  openingDate: DateString;
-  closingDate: DateString;
-  dueDate: DateString;
-  totalAmount: number;
   status: PaymentStatus;
 };

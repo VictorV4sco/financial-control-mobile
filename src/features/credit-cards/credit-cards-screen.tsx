@@ -7,10 +7,15 @@ import {
   SafeAreaView,
   ScrollView,
   Text,
-  TextInput,
   View,
 } from 'react-native';
 
+import {
+  buildCreditCardPayload,
+  createFormStateFromCard,
+  INITIAL_CREDIT_CARD_FORM_STATE,
+} from './credit-card-form.utils';
+import { CreditCardCycleFormFields } from './components/credit-card-cycle-form-fields';
 import { CreditCardDetailsModal } from './components/credit-card-details-modal';
 import { styles } from './components/styles/credit-cards-screen.styles';
 import { CreditCardVisual } from './components/credit-card-visual';
@@ -21,14 +26,10 @@ import {
   normalizeApiError,
   updateCreditCard,
 } from '@/service';
-import type { CreditCardInsertDTO, CreditCardReadDTO } from '@/types';
-
-const INITIAL_FORM_STATE: CreditCardInsertDTO = {
-  name: '',
-};
+import type { CreditCardReadDTO } from '@/types';
 
 export function CreditCardsScreen() {
-  const [formState, setFormState] = useState(INITIAL_FORM_STATE);
+  const [formState, setFormState] = useState(INITIAL_CREDIT_CARD_FORM_STATE);
   const [cards, setCards] = useState<CreditCardReadDTO[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
@@ -36,7 +37,7 @@ export function CreditCardsScreen() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [selectedCard, setSelectedCard] = useState<CreditCardReadDTO | null>(null);
-  const [editName, setEditName] = useState('');
+  const [editFormState, setEditFormState] = useState(INITIAL_CREDIT_CARD_FORM_STATE);
 
   const selectedCardIndex = useMemo(
     () => cards.findIndex((card) => card.id === selectedCard?.id),
@@ -67,10 +68,12 @@ export function CreditCardsScreen() {
   }
 
   async function handleCreateCreditCard() {
-    const payload = buildPayload(formState);
+    const payload = buildCreditCardPayload(formState);
 
     if (!payload) {
-      showErrorAlert('Please enter a card name before saving.');
+      showErrorAlert(
+        'Please enter a card name and valid opening, closing, and due days before saving.'
+      );
       return;
     }
 
@@ -79,7 +82,7 @@ export function CreditCardsScreen() {
       const createdCard = await createCreditCard(payload);
 
       setCards((current) => [createdCard, ...current]);
-      setFormState(INITIAL_FORM_STATE);
+      setFormState(INITIAL_CREDIT_CARD_FORM_STATE);
       showSuccessAlert(`Saved "${createdCard.name}" successfully.`);
     } catch (error) {
       showErrorAlert(getApiErrorMessage(error));
@@ -89,17 +92,17 @@ export function CreditCardsScreen() {
   }
 
   function handleClearForm() {
-    setFormState(INITIAL_FORM_STATE);
+    setFormState(INITIAL_CREDIT_CARD_FORM_STATE);
   }
 
   function handleOpenCard(card: CreditCardReadDTO) {
     setSelectedCard(card);
-    setEditName(card.name);
+    setEditFormState(createFormStateFromCard(card));
   }
 
   function handleCloseCardModal() {
     setSelectedCard(null);
-    setEditName('');
+    setEditFormState(INITIAL_CREDIT_CARD_FORM_STATE);
   }
 
   async function handleUpdateCard() {
@@ -107,22 +110,27 @@ export function CreditCardsScreen() {
       return;
     }
 
-    const payload = buildPayload({ name: editName });
+    const payload = buildCreditCardPayload(editFormState);
 
     if (!payload) {
-      showErrorAlert('Please enter a card name before updating.');
+      showErrorAlert(
+        'Please enter a card name and valid opening, closing, and due days before updating.'
+      );
       return;
     }
 
     try {
       setIsUpdating(true);
-      const updatedCard = await updateCreditCard(selectedCard.id, payload);
+      const updatedCard = await updateCreditCard(selectedCard.id, {
+        ...payload,
+        id: selectedCard.id,
+      });
 
       setCards((current) =>
         current.map((card) => (card.id === updatedCard.id ? updatedCard : card))
       );
       setSelectedCard(updatedCard);
-      setEditName(updatedCard.name);
+      setEditFormState(createFormStateFromCard(updatedCard));
       showSuccessAlert(`Updated "${updatedCard.name}" successfully.`);
     } catch (error) {
       showErrorAlert(getApiErrorMessage(error));
@@ -201,21 +209,11 @@ export function CreditCardsScreen() {
           <View style={styles.panelHeader}>
             <Text style={styles.panelTitle}>Add card</Text>
             <Text style={styles.panelSubtitle}>
-              Create a card name to use later in bill and transaction flows.
+              Create the card and define its monthly billing cycle once.
             </Text>
           </View>
 
-          <View style={styles.formGroup}>
-            <Text style={styles.inputLabel}>Card name</Text>
-            <TextInput
-              value={formState.name}
-              onChangeText={(value) => setFormState({ name: value })}
-              placeholder="Everyday card"
-              placeholderTextColor="#7B8794"
-              autoCapitalize="words"
-              style={styles.input}
-            />
-          </View>
+          <CreditCardCycleFormFields formState={formState} onChange={setFormState} />
 
           <View style={styles.actionsRow}>
             <Pressable
@@ -239,7 +237,7 @@ export function CreditCardsScreen() {
           <View>
             <Text style={styles.sectionTitle}>Your cards</Text>
             <Text style={styles.sectionSubtitle}>
-              Tap a card to preview it, rename it, or delete it.
+              Tap a card to preview it, update its cycle, or delete it.
             </Text>
           </View>
         </View>
@@ -269,29 +267,17 @@ export function CreditCardsScreen() {
 
       <CreditCardDetailsModal
         card={selectedCard}
-        editName={editName}
+        editFormState={editFormState}
         index={selectedCardIndex >= 0 ? selectedCardIndex : 0}
         isDeleting={isDeleting}
         isUpdating={isUpdating}
         onClose={handleCloseCardModal}
         onDelete={handleDeleteCard}
-        onEditNameChange={setEditName}
+        onFormChange={setEditFormState}
         onUpdate={handleUpdateCard}
       />
     </SafeAreaView>
   );
-}
-
-function buildPayload(formState: CreditCardInsertDTO): CreditCardInsertDTO | null {
-  const normalizedName = formState.name.trim();
-
-  if (!normalizedName) {
-    return null;
-  }
-
-  return {
-    name: normalizedName,
-  };
 }
 
 function getApiErrorMessage(error: unknown): string {

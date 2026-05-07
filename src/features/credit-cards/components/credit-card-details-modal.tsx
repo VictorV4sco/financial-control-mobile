@@ -1,30 +1,32 @@
-import { Modal, Pressable, Text, TextInput, View } from 'react-native';
+import { Modal, Pressable, Text, View } from 'react-native';
 
+import { type CreditCardFormState } from '../credit-card-form.utils';
+import { CreditCardCycleFormFields } from './credit-card-cycle-form-fields';
 import { CreditCardVisual } from './credit-card-visual';
 import { styles } from './styles/credit-card-details-modal.styles';
 import type { CreditCardReadDTO } from '@/types';
 
 type CreditCardDetailsModalProps = {
   card: CreditCardReadDTO | null;
-  editName: string;
+  editFormState: CreditCardFormState;
   index: number;
   isDeleting: boolean;
   isUpdating: boolean;
   onClose: () => void;
   onDelete: () => void;
-  onEditNameChange: (value: string) => void;
+  onFormChange: (updater: (current: CreditCardFormState) => CreditCardFormState) => void;
   onUpdate: () => void;
 };
 
 export function CreditCardDetailsModal({
   card,
-  editName,
+  editFormState,
   index,
   isDeleting,
   isUpdating,
   onClose,
   onDelete,
-  onEditNameChange,
+  onFormChange,
   onUpdate,
 }: CreditCardDetailsModalProps) {
   if (!card) {
@@ -43,15 +45,7 @@ export function CreditCardDetailsModal({
           <CreditCardVisual cardId={card.id} index={index} name={card.name} />
 
           <View style={styles.formCard}>
-            <Text style={styles.inputLabel}>Card name</Text>
-            <TextInput
-              value={editName}
-              onChangeText={onEditNameChange}
-              placeholder="Everyday card"
-              placeholderTextColor="#7B8794"
-              autoCapitalize="words"
-              style={styles.input}
-            />
+            <CreditCardCycleFormFields formState={editFormState} onChange={onFormChange} />
           </View>
 
           <View style={styles.actionsRow}>

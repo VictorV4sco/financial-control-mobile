@@ -112,6 +112,13 @@ export const styles = StyleSheet.create({
   cardsList: {
     gap: 14,
   },
+  cardPressable: {
+    borderRadius: 28,
+  },
+  cardPressablePressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.995 }],
+  },
   cardFrame: {
     borderRadius: 28,
   },
